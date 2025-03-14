@@ -1,0 +1,25 @@
+git clone https://github.com/llvm/llvm-project.git
+cd llvm-project
+git checkout release/19.x
+mkdir build
+cd build
+
+#-DLLVM_TARGETS_TO_BUILD="X86;ARM;NVPTX;AMDGPU"
+
+cmake -G Ninja ../llvm \
+  -DLLVM_ENABLE_PROJECTS="clang;llvm;mlir" \
+  -DLLVM_BUILD_EXAMPLES=ON \
+   -DLLVM_TARGETS_TO_BUILD="host" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_ASSERTIONS=ON
+  
+cmake --build . -- -j4
+sudo cmake --install .
+
+
+# llvm
+llvm-config --prefix
+cmake -DLT_LLVM_INSTALL_DIR=/usr/local ..
+make -j$(nproc)
+clang -O1 -S -emit-llvm input_for_cc.c -o input_for_cc.ll
+opt -load-pass-plugin ./build/libOpcodeCounter.so -passes="print<opcode-counter>" -disable-output ./test/input_for_cc.ll
